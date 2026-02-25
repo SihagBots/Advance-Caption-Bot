@@ -1,6 +1,9 @@
 from pyrogram import *
 from info import *
 import asyncio
+import os
+import sys
+import time
 from Script import script
 from .database import *
 import re
@@ -201,18 +204,18 @@ def format_duration(duration):
 @Client.on_message(filters.channel)
 async def reCap(bot, message):
     chnl_id = message.chat.id
-    default_caption = message.caption
+    default_caption = message.caption or ""
     if message.media:
         for file_type in ("video", "audio", "document", "voice"):
             obj = getattr(message, file_type, None)
             if obj and hasattr(obj, "file_name"):
                 file_name = obj.file_name
                 file_size = obj.file_size
+                duration = format_duration(getattr(obj, "duration", None))
+                height = getattr(obj, "height", None) or "N/A"
+                width = getattr(obj, "width", None) or "N/A"
                 language = extract_language(default_caption)
                 year = extract_year(default_caption)
-                duration = formatted_duration,
-                height = height or "N/A", 
-                width=width or "N/A",
                 file_name = (
                     re.sub(r"@\w+\s*", "", file_name)
                     .replace("_", " ")
@@ -228,13 +231,13 @@ async def reCap(bot, message):
                 try:
                     if cap_dets:
                         cap = cap_dets["caption"]
-                        replaced_caption = cap.format(file_name=file_name, file_size=get_size(file_size), default_caption=default_caption, language=language, year=year)
+                        replaced_caption = cap.format(file_name=file_name, file_size=get_size(file_size), default_caption=default_caption, language=language, year=year, duration=duration, height=height, width=width)
                         await message.edit(replaced_caption)
                     else:
-                        replaced_caption = DEF_CAP.format(file_name=file_name, file_size=get_size(file_size), default_caption=default_caption, language=language, year=year, duration = formatted_duration, height = height or "N/A", width = width or "N/A",)
+                        replaced_caption = DEF_CAP.format(file_name=file_name, file_size=get_size(file_size), default_caption=default_caption, language=language, year=year, duration=duration, height=height, width=width)
                         await message.edit(replaced_caption)
                 except FloodWait as e:
-                    await asyncio.sleep(e)
+                    await asyncio.sleep(e.value)
                     continue
     return
 
@@ -295,4 +298,3 @@ async def about(bot, query):
         disable_web_page_preview=True 
 
 )
-
